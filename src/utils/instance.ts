@@ -12,13 +12,16 @@ import { hasOwn, proxy, warn } from './utils'
 import { createSlotProxy, resolveSlots } from './helper'
 import { reactive } from '../reactivity/reactive'
 
+// 这个函数用于在vm上赋值
 export function asVmProperty(
   vm: ComponentInstance,
   propName: string,
   propValue: Ref<unknown>
 ) {
   const props = vm.$options.props
+  // 如果vm中不存在名为`propName`的属性，且vm的props选项中也没有名为`propName`
   if (!(propName in vm) && !(props && hasOwn(props, propName))) {
+    // 如果值被ref包过
     if (isRef(propValue)) {
       proxy(vm, propName, {
         get: () => propValue.value,
@@ -26,10 +29,13 @@ export function asVmProperty(
           propValue.value = val
         },
       })
-    } else {
+    }
+    // 如果值没有被ref包过（可能是响应式对象？）
+    else {
       proxy(vm, propName, {
         get: () => {
           if (isReactive(propValue)) {
+            // 进行一次依赖收集，使得watcher依赖这个值？
             ;(propValue as any).__ob__.dep.depend()
           }
           return propValue
@@ -41,6 +47,7 @@ export function asVmProperty(
     }
 
     if (__DEV__) {
+      // 开发环境下会把setup函数返回的值往_data上存一份，因此开发者工具中可以看到相关属性
       // expose binding to Vue Devtool as a data property
       // delay this until state has been resolved to prevent repeated works
       vm.$nextTick(() => {
@@ -64,7 +71,9 @@ export function asVmProperty(
         }
       })
     }
-  } else if (__DEV__) {
+  }
+  // 如果来到这里，说明`propName`与vm的props重名了
+  else if (__DEV__) {
     if (props && hasOwn(props, propName)) {
       warn(
         `The setup binding property "${propName}" is already declared as a prop.`,

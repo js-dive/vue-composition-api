@@ -78,7 +78,9 @@ export function mixin(Vue: VueConstructor) {
     const { data } = $options
     // wrapper the data option, so we can invoke setup before data get resolved
     $options.data = function wrappedData() {
+      // 初始化setup函数中返回的data
       initSetup(vm, vm.$props)
+      // 初始化data选项中的data
       return isFunction(data)
         ? (
             data as (this: ComponentInstance, x: ComponentInstance) => object
@@ -102,10 +104,12 @@ export function mixin(Vue: VueConstructor) {
     let binding: ReturnType<SetupFunction<Data, Data>> | undefined | null
     activateCurrentInstance(instance, () => {
       // make props to be fake reactive, this is for `toRefs(props)`
+      // 执行我们传入的setup函数的地方，binding是setup的返回值
       binding = setup(props, ctx)
     })
 
     if (!binding) return
+    // 如果返回值是一个函数的话，看起来应该是个渲染函数
     if (isFunction(binding)) {
       // keep typescript happy with the binding type.
       const bindingFunc = binding
@@ -115,36 +119,51 @@ export function mixin(Vue: VueConstructor) {
         return activateCurrentInstance(instance, () => bindingFunc())
       }
       return
-    } else if (isPlainObject(binding)) {
+    }
+    // 如果返回的是一个纯对象
+    else if (isPlainObject(binding)) {
       if (isReactive(binding)) {
-        binding = toRefs(binding) as Data
+        binding = toRefs(binding) as Data // 需要把这个对象进行响应式处理
       }
 
+      // 这里对vm进行了一点修改，为vm加了__composition_api_state__属性
       vmStateManager.set(vm, 'rawBindings', binding)
       const bindingObj = binding
 
+      // 统一bindingValue的格式并赋值
+      // 已经是ref或响应式对象的值不做处理；
+      // 基本类型的值与数组转为ref
+      // TODO: 好像没考虑对象？
       Object.keys(bindingObj).forEach((name) => {
         let bindingValue: any = bindingObj[name]
 
+        // 如果遍历访问到的值不是一个ref
         if (!isRef(bindingValue)) {
+          // 如果遍历访问到的值也不是一个响应式对象
           if (!isReactive(bindingValue)) {
+            // 如果这个值为函数
             if (isFunction(bindingValue)) {
               const copy = bindingValue
               bindingValue = bindingValue.bind(vm)
               Object.keys(copy).forEach(function (ele) {
                 bindingValue[ele] = copy[ele]
               })
-            } else if (!isObject(bindingValue)) {
+            }
+            // 如果这个值不是对象的话，需要用ref包一下
+            else if (!isObject(bindingValue)) {
               bindingValue = ref(bindingValue)
             } else if (hasReactiveArrayChild(bindingValue)) {
               // creates a custom reactive properties without make the object explicitly reactive
               // NOTE we should try to avoid this, better implementation needed
               customReactive(bindingValue)
             }
-          } else if (isArray(bindingValue)) {
+          }
+          // 如果这个值是一个数组的话，也需要用ref包一下
+          else if (isArray(bindingValue)) {
             bindingValue = ref(bindingValue)
           }
         }
+        // 把bindingValue作为属性放到vm上
         asVmProperty(vm, name, bindingValue)
       })
 
