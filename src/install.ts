@@ -7,6 +7,7 @@ import { mixin } from './mixin'
 
 /**
  * Helper that recursively merges two data objects together.
+ * 递归地合并两个data对象？
  */
 function mergeData(from: AnyObject, to: AnyObject): Object {
   if (!from) return to
@@ -40,6 +41,7 @@ function mergeData(from: AnyObject, to: AnyObject): Object {
 }
 
 export function install(Vue: VueConstructor) {
+  // 防止被插件被多次安装
   if (isVueRegistered(Vue)) {
     if (__DEV__) {
       warn(
@@ -61,6 +63,7 @@ export function install(Vue: VueConstructor) {
     }
   }
 
+  // 配置setup的合并策略
   Vue.config.optionMergeStrategies.setup = function (
     parent: Function,
     child: Function
@@ -73,7 +76,9 @@ export function install(Vue: VueConstructor) {
     }
   }
 
+  // 在Vue类上记录一个表示插件已安装的标志位
   setVueConstructor(Vue)
+  // 配置全局mixin
   mixin(Vue)
 }
 

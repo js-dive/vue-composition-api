@@ -21,6 +21,7 @@ declare module 'vue/types/options' {
 }
 
 // auto install when using CDN
+debugger
 if (typeof window !== 'undefined' && window.Vue) {
   window.Vue.use(Plugin)
 }
