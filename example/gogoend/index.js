@@ -1,13 +1,13 @@
-import '../../node_modules/vue/dist/vue.js'
-
-import '../../dist/vue-composition-api.js'
+import Vue from 'vue'
+import VueCompositionAPI, { ref, createApp } from '@vue/composition-api'
+Vue.use(VueCompositionAPI)
 
 const App = {
   template: `
 <div>{{ msg }} {{ msg1 }}</div>
 `,
   setup() {
-    const msg = VueCompositionAPI.ref('666')
+    const msg = ref('666')
     return {
       msg,
     }
@@ -19,4 +19,4 @@ const App = {
   },
 }
 
-VueCompositionAPI.createApp(App).mount('#app')
+createApp(App).mount('#app')

@@ -79,7 +79,7 @@ function genConfig({ outFile, format, mode }) {
         'process.env.NODE_ENV':
           format === 'es'
             ? // preserve to be handled by bundlers
-              'process.env.NODE_ENV'
+              'undefined'
             : // hard coded dev/prod builds
               JSON.stringify(isProd ? 'production' : 'development'),
         __DEV__:
