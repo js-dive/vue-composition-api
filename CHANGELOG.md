@@ -1,3 +1,77 @@
+<a name="1.4.10"></a>
+## [1.4.10](https://github.com/vuejs/composition-api/compare/v1.4.9...v1.4.10) (2022-03-16)
+
+
+
+<a name="1.4.9"></a>
+## [1.4.9](https://github.com/vuejs/composition-api/compare/v1.4.8...v1.4.9) (2022-02-26)
+
+
+
+<a name="1.4.8"></a>
+## [1.4.8](https://github.com/vuejs/composition-api/compare/v1.4.7...v1.4.8) (2022-02-26)
+
+
+### Bug Fixes
+
+* **types:** optional Boolean props as default props ([#909](https://github.com/vuejs/composition-api/issues/909)) ([8f88ae6](https://github.com/vuejs/composition-api/commit/8f88ae6))
+* use registered Vue instance for warning ([b01f1e4](https://github.com/vuejs/composition-api/commit/b01f1e4))
+
+
+
+<a name="1.4.7"></a>
+## [1.4.7](https://github.com/vuejs/composition-api/compare/v1.4.6...v1.4.7) (2022-02-24)
+
+
+### Bug Fixes
+
+* markRaw in watch ([#903](https://github.com/vuejs/composition-api/issues/903)) ([192f4c1](https://github.com/vuejs/composition-api/commit/192f4c1))
+
+
+
+<a name="1.4.6"></a>
+## [1.4.6](https://github.com/vuejs/composition-api/compare/v1.4.5...v1.4.6) (2022-02-07)
+
+
+### Bug Fixes
+
+* dynamically update deep scopedSlot refs ([#899](https://github.com/vuejs/composition-api/issues/899)) ([ef312a3](https://github.com/vuejs/composition-api/commit/ef312a3))
+
+
+
+<a name="1.4.5"></a>
+## [1.4.5](https://github.com/vuejs/composition-api/compare/v1.4.4...v1.4.5) (2022-01-27)
+
+
+### Bug Fixes
+
+* **reactive:** remove useless proxy logic of shallowReactive ([#890](https://github.com/vuejs/composition-api/issues/890)) ([7243ffa](https://github.com/vuejs/composition-api/commit/7243ffa))
+* **shallowReactive:** don't trigger watchers for oldVal === newVal ([#894](https://github.com/vuejs/composition-api/issues/894)) ([2a88e71](https://github.com/vuejs/composition-api/commit/2a88e71))
+
+
+
+<a name="1.4.4"></a>
+## [1.4.4](https://github.com/vuejs/composition-api/compare/v1.4.3...v1.4.4) (2022-01-16)
+
+
+### Bug Fixes
+
+* **types:** `emit` type in SetupContext ([#884](https://github.com/vuejs/composition-api/issues/884)) ([5c35403](https://github.com/vuejs/composition-api/commit/5c35403))
+* **types:** update inject and unref type ([#888](https://github.com/vuejs/composition-api/issues/888)) ([315f6ab](https://github.com/vuejs/composition-api/commit/315f6ab))
+
+
+
+<a name="1.4.3"></a>
+## [1.4.3](https://github.com/vuejs/composition-api/compare/v1.4.2...v1.4.3) (2021-12-27)
+
+
+### Bug Fixes
+
+* [#874](https://github.com/vuejs/composition-api/issues/874) setup return object with type of Module ([#875](https://github.com/vuejs/composition-api/issues/875)) ([a1a3e11](https://github.com/vuejs/composition-api/commit/a1a3e11))
+* improve register check, close [#876](https://github.com/vuejs/composition-api/issues/876) ([#878](https://github.com/vuejs/composition-api/issues/878)) ([3c2ad93](https://github.com/vuejs/composition-api/commit/3c2ad93))
+
+
+
 <a name="1.4.2"></a>
 ## [1.4.2](https://github.com/vuejs/composition-api/compare/v1.4.1...v1.4.2) (2021-12-17)
 

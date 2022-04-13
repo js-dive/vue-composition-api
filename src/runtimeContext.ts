@@ -9,7 +9,7 @@ import {
   UnionToIntersection,
   isFunction,
 } from './utils'
-import Vue$1 from 'vue'
+import type Vue$1 from 'vue'
 
 let vueDependency: VueConstructor | undefined = undefined
 
@@ -43,7 +43,8 @@ export function isPluginInstalled() {
 }
 
 export function isVueRegistered(Vue: VueConstructor) {
-  return hasOwn(Vue, PluginInstalledFlag)
+  // resolve issue: https://github.com/vuejs/composition-api/issues/876#issue-1087619365
+  return vueConstructor && hasOwn(Vue, PluginInstalledFlag)
 }
 
 export function getVueConstructor(): VueConstructor {
@@ -144,7 +145,7 @@ export type ComponentRenderEmitFn<
 
 export type Slots = Readonly<InternalSlots>
 
-export interface SetupContext<E = EmitsOptions> {
+export interface SetupContext<E extends EmitsOptions = {}> {
   attrs: Data
   slots: Slots
   emit: EmitFn<E>

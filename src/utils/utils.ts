@@ -1,4 +1,4 @@
-import Vue from 'vue'
+import { getRegisteredVueOrDefault } from '../runtimeContext'
 
 const toString = (x: any) => Object.prototype.toString.call(x)
 
@@ -99,7 +99,9 @@ export function isUndef(v: any): boolean {
 }
 
 export function warn(msg: string, vm?: Vue) {
-  Vue.util.warn(msg, vm)
+  const Vue = getRegisteredVueOrDefault()
+  if (!Vue || !Vue.util) console.warn(`[vue-composition-api] ${msg}`)
+  else Vue.util.warn(msg, vm)
 }
 
 export function logError(err: Error, vm: Vue, info: string) {
@@ -110,5 +112,17 @@ export function logError(err: Error, vm: Vue, info: string) {
     console.error(err)
   } else {
     throw err
+  }
+}
+
+/**
+ * Object.is polyfill
+ * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/is
+ * */
+export function isSame(value1: any, value2: any): boolean {
+  if (value1 === value2) {
+    return value1 !== 0 || 1 / value1 === 1 / value2
+  } else {
+    return value1 !== value1 && value2 !== value2
   }
 }

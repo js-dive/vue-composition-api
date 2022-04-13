@@ -11,6 +11,7 @@ import {
   isPlainObject,
   isSet,
   isMap,
+  isSame,
 } from '../utils'
 import { defineComponentInstance } from '../utils/helper'
 import { getVueConstructor } from '../runtimeContext'
@@ -19,6 +20,7 @@ import {
   WatcherPostFlushQueueKey,
 } from '../utils/symbols'
 import { getCurrentScopeVM } from './effectScope'
+import { rawSet } from '../utils/sets'
 
 export type WatchEffect = (onInvalidate: InvalidateCbRegistrator) => void
 
@@ -346,7 +348,7 @@ function createWatcher(
     if (
       !deep &&
       isMultiSource &&
-      n.every((v: any, i: number) => Object.is(v, o[i]))
+      n.every((v: any, i: number) => isSame(v, o[i]))
     )
       return
     // cleanup before running cb again
@@ -422,7 +424,7 @@ export function watch<
   T extends Readonly<WatchSource<unknown>[]>,
   Immediate extends Readonly<boolean> = false
 >(
-  sources: T,
+  sources: [...T],
   cb: WatchCallback<MapSources<T>, MapOldSources<T, Immediate>>,
   options?: WatchOptions<Immediate>
 ): WatchStopHandle
@@ -474,7 +476,7 @@ export function watch<T = any>(
 }
 
 function traverse(value: unknown, seen: Set<unknown> = new Set()) {
-  if (!isObject(value) || seen.has(value)) {
+  if (!isObject(value) || seen.has(value) || rawSet.has(value)) {
     return value
   }
   seen.add(value)

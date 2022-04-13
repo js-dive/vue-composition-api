@@ -8,11 +8,12 @@ import {
   shallowReactive,
   nextTick,
 } from '../../../src'
-import Vue from 'vue'
+import { getRegisteredVueOrDefault } from '../../../src/runtimeContext'
 
 // reference: https://vue-composition-api-rfc.netlify.com/api.html#watch
 
 describe('api: watch', () => {
+  const Vue = getRegisteredVueOrDefault()
   // const warnSpy = jest.spyOn(console, 'warn');
   const warnSpy = jest.spyOn((Vue as any).util, 'warn')
 
@@ -142,7 +143,7 @@ describe('api: watch', () => {
     const status = ref(false)
 
     let dummy
-    watch([() => state.count, status] as const, (vals, oldVals) => {
+    watch([() => state.count, status], (vals, oldVals) => {
       dummy = [vals, oldVals]
       const [count] = vals
       const [, oldStatus] = oldVals

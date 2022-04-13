@@ -14,6 +14,7 @@ import { isComponentInstance, defineComponentInstance } from '../utils/helper'
 import { RefKey } from '../utils/symbols'
 import { isRef, UnwrapRef } from './ref'
 import { rawSet, accessModifiedSet } from '../utils/sets'
+import { isForceTrigger } from './force'
 
 export function isRaw(obj: any): boolean {
   return Boolean(
@@ -189,7 +190,6 @@ export function shallowReactive(obj: any) {
   }
 
   const observed = observe(isArray(obj) ? [] : {})
-  setupAccessControl(observed)
 
   const ob = (observed as any).__ob__
 
@@ -208,12 +208,13 @@ export function shallowReactive(obj: any) {
 
     proxy(observed, key, {
       get: function getterHandler() {
-        const value = getter ? getter.call(obj) : val
         ob.dep?.depend()
-        return value
+        return val
       },
       set: function setterHandler(newVal: any) {
         if (getter && !setter) return
+
+        if (!isForceTrigger() && val === newVal) return
         if (setter) {
           setter.call(obj, newVal)
         } else {

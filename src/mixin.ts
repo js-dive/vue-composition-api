@@ -14,7 +14,7 @@ import {
 import { ref } from './apis'
 import vmStateManager from './utils/vmStateManager'
 import {
-  updateTemplateRef,
+  afterRender,
   activateCurrentInstance,
   resolveScopedSlots,
   asVmProperty,
@@ -31,16 +31,13 @@ export function mixin(Vue: VueConstructor) {
   Vue.mixin({
     beforeCreate: functionApiInit,
     mounted(this: ComponentInstance) {
-      updateTemplateRef(this)
+      afterRender(this)
     },
     beforeUpdate() {
       updateVmAttrs(this as ComponentInstance)
     },
     updated(this: ComponentInstance) {
-      updateTemplateRef(this)
-      if (this.$vnode?.context) {
-        updateTemplateRef(this.$vnode.context)
-      }
+      afterRender(this)
     },
   })
 
@@ -121,7 +118,7 @@ export function mixin(Vue: VueConstructor) {
       return
     }
     // 如果返回的是一个纯对象
-    else if (isPlainObject(binding)) {
+    else if (isObject(binding)) {
       if (isReactive(binding)) {
         binding = toRefs(binding) as Data // 需要把这个对象进行响应式处理
       }
