@@ -6,6 +6,7 @@ import { set } from './set'
 import { setForceTrigger } from './force'
 
 declare const _refBrand: unique symbol
+// 实现了Ref的对象中，包含一个value，用于存储原始值
 export interface Ref<T = any> {
   readonly [_refBrand]: true
   value: T
@@ -62,10 +63,13 @@ interface RefOption<T> {
   get(): T
   set?(x: T): void
 }
+
+// RefImpl实现了Ref接口
 export class RefImpl<T> implements Ref<T> {
   readonly [_refBrand]!: true
   public value!: T
   constructor({ get, set }: RefOption<T>) {
+    // 内部使用Object.defineProperty，配置this.value，以代理get、set的动作
     proxy(this, 'value', {
       get,
       set,
@@ -78,6 +82,7 @@ export function createRef<T>(
   isReadonly = false,
   isComputed = false
 ): RefImpl<T> {
+  // 新建一个RefImpl实例
   const r = new RefImpl<T>(options)
 
   // add effect to differentiate refs from computed
@@ -99,11 +104,14 @@ export function ref<T extends object>(
 export function ref<T>(raw: T): Ref<UnwrapRef<T>>
 export function ref<T = any>(): Ref<T | undefined>
 export function ref(raw?: unknown) {
+  // 如果对象已经是ref，就不再转换了，直接返回
   if (isRef(raw)) {
     return raw
   }
 
+  // 最终ref里的值通过这个变量来存
   const value = reactive({ [RefKey]: raw })
+  // createRef -> new RefImpl 获得响应式对象
   return createRef({
     get: () => value[RefKey] as any,
     set: (v) => ((value[RefKey] as any) = v),
@@ -125,6 +133,7 @@ export function toRefs<T extends object>(obj: T): ToRefs<T> {
   if (!isPlainObject(obj)) return obj
 
   const ret: any = {}
+  // 遍历对象中每个key，逐个转换为ref
   for (const key in obj) {
     ret[key] = toRef(obj, key)
   }
@@ -158,8 +167,10 @@ export function toRef<T extends object, K extends keyof T>(
 ): Ref<T[K]> {
   if (!(key in object)) set(object, key, undefined)
   const v = object[key]
+  // 如果对象已经是ref，就不再转换了，直接返回
   if (isRef<T[K]>(v)) return v
 
+  // 创建Ref
   return createRef({
     get: () => object[key],
     set: (v) => (object[key] = v),
