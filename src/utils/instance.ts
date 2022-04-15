@@ -13,7 +13,10 @@ import { hasOwn, proxy, warn } from './utils'
 import { createSlotProxy, resolveSlots } from './helper'
 import { reactive } from '../reactivity/reactive'
 
-// 这个函数用于在vm上赋值
+/**
+ * 在vm上赋值属性
+ * 例如：将setup返回值上的属性代理到vm上；内部用defineProperty get、set 实现
+ */
 export function asVmProperty(
   vm: ComponentInstance,
   propName: string,

@@ -48,8 +48,11 @@ export function mixin(Vue: VueConstructor) {
   function functionApiInit(this: ComponentInstance) {
     const vm = this
     const $options = vm.$options
+
+    // 保存原有option上的setup、render方法
     const { setup, render } = $options
 
+    // 如果render函数存在，就不用管setup函数了
     if (render) {
       // keep currentInstance accessible for createElement
       $options.render = function (...args: any): any {
@@ -72,8 +75,10 @@ export function mixin(Vue: VueConstructor) {
       return
     }
 
+    // 保存原有option上的data方法
     const { data } = $options
     // wrapper the data option, so we can invoke setup before data get resolved
+    // 相当于把setup包装成data函数
     $options.data = function wrappedData() {
       // 初始化setup函数中返回的data
       initSetup(vm, vm.$props)
@@ -87,17 +92,19 @@ export function mixin(Vue: VueConstructor) {
   }
 
   function initSetup(vm: ComponentInstance, props: Record<any, any> = {}) {
-    const setup = vm.$options.setup!
+    const setup = vm.$options.setup! // setup函数必然存在
     const ctx = createSetupContext(vm)
     const instance = toVue3ComponentInstance(vm)
     instance.setupContext = ctx
 
+    // 给props设置响应式？？？
     // fake reactive for `toRefs(props)`
     def(props, '__ob__', createObserver())
 
     // resolve scopedSlots and slots to functions
     resolveScopedSlots(vm, ctx.slots)
 
+    // binding 即 setup 的返回值
     let binding: ReturnType<SetupFunction<Data, Data>> | undefined | null
     activateCurrentInstance(instance, () => {
       // make props to be fake reactive, this is for `toRefs(props)`
@@ -160,7 +167,7 @@ export function mixin(Vue: VueConstructor) {
             bindingValue = ref(bindingValue)
           }
         }
-        // 把bindingValue作为属性放到vm上
+        // 把bindingValue作为属性放到vm上，这样模板里也可以访问到setup中的属性
         asVmProperty(vm, name, bindingValue)
       })
 
