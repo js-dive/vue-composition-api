@@ -89,6 +89,11 @@ export function asVmProperty(
   }
 }
 
+/**
+ * 来更新 setupState （aka. rawBindings）中对元素/组件的引用（ref="xxx"）到最新的渲染结果
+ * @param vm
+ * @returns
+ */
 function updateTemplateRef(vm: ComponentInstance) {
   const rawBindings = vmStateManager.get(vm, 'rawBindings') || {}
   if (!rawBindings || !Object.keys(rawBindings).length) return
@@ -116,6 +121,11 @@ function updateTemplateRef(vm: ComponentInstance) {
   vmStateManager.set(vm, 'refs', validNewKeys)
 }
 
+/**
+ * 全局混入的mounted函数
+ * 内部调用 updateTemplateRef 来更新 setupState （aka. rawBindings）中对元素/组件的引用（ref="xxx"）到最新的渲染结果
+ * @param vm 要操作的vm
+ */
 export function afterRender(vm: ComponentInstance) {
   const stack = [(vm as any)._vnode as VNode]
   while (stack.length) {

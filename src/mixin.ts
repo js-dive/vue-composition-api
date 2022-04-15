@@ -31,12 +31,14 @@ export function mixin(Vue: VueConstructor) {
   Vue.mixin({
     beforeCreate: functionApiInit,
     mounted(this: ComponentInstance) {
+      // 内部逻辑：保持ref引用的对应DOM/组件为最新
       afterRender(this)
     },
     beforeUpdate() {
       updateVmAttrs(this as ComponentInstance)
     },
     updated(this: ComponentInstance) {
+      // 内部逻辑：保持ref引用的对应DOM/组件为最新
       afterRender(this)
     },
   })
