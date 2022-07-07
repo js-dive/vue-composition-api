@@ -207,14 +207,18 @@ export function resolveScopedSlots(
   vmStateManager.set(vm, 'slots', slotNames)
 }
 
+// 激活当前实例
 export function activateCurrentInstance(
   instance: ComponentInternalInstance,
   fn: (instance: ComponentInternalInstance) => any,
   onError?: (err: Error) => void
 ) {
+  // 先保存上一个实例
   let preVm = getCurrentInstance()
+  // 设置当前实例
   setCurrentInstance(instance)
   try {
+    // 执行回调setup函数的地方
     return fn(instance)
   } catch (
     // FIXME: remove any
@@ -226,6 +230,7 @@ export function activateCurrentInstance(
       throw err
     }
   } finally {
+    // 恢复上一个实例
     setCurrentInstance(preVm)
   }
 }

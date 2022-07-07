@@ -101,6 +101,9 @@ export function setCurrentVue2Instance(vm: ComponentInstance | null) {
   setCurrentInstance(vm ? toVue3ComponentInstance(vm) : vm)
 }
 
+/**
+ * 设置当前实例
+ */
 export function setCurrentInstance(instance: ComponentInternalInstance | null) {
   if (!currentInstanceTracking) return
   const prev = currentInstance
@@ -229,6 +232,11 @@ export declare interface ComponentInternalInstance {
   setupContext: SetupContext | null
 }
 
+/**
+ * 获取当前实例
+ * 仅在组件setup以及生命周期函数期间能够拿到当前实例
+ * @returns
+ */
 export function getCurrentInstance() {
   return currentInstance
 }
@@ -238,6 +246,11 @@ const instanceMapCache = new WeakMap<
   ComponentInternalInstance
 >()
 
+/**
+ * 将Vue2组件转换到Vue3组件
+ * @param vm Vue2 组件实例
+ * @returns Vue3 组件实例
+ */
 export function toVue3ComponentInstance(
   vm: ComponentInstance
 ): ComponentInternalInstance {
@@ -245,6 +258,7 @@ export function toVue3ComponentInstance(
     return instanceMapCache.get(vm)!
   }
 
+  // 内部instance
   const instance: ComponentInternalInstance = {
     proxy: vm,
     update: vm.$forceUpdate,
@@ -270,6 +284,7 @@ export function toVue3ComponentInstance(
     'slots',
   ] as const
 
+  // 代理一些属性到内部instance上
   instanceProps.forEach((prop) => {
     proxy(instance, prop, {
       get() {
