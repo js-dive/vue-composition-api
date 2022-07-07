@@ -111,12 +111,21 @@ export function defineAccessControl(target: AnyObject, key: any, val?: any) {
   })
 }
 
+/**
+ * 返回一个经过响应式处理的对象
+ * 该函数被shallowReactive、reactive、shallowReadonly所使用
+ * @param obj 对象
+ * @returns
+ */
 export function observe<T>(obj: T): T {
   const Vue = getRegisteredVueOrDefault()
   let observed: T
+  // 低版本Vue中不存在observable这个方法，在这里做了兼容
   if (Vue.observable) {
+    // 显式调用vue中用于监听对象的observe函数
     observed = Vue.observable(obj)
   } else {
+    // 兼容处理看起来是生成了一个新的vue实例
     const vm = defineComponentInstance(Vue, {
       data: {
         $$state: obj,
@@ -173,6 +182,10 @@ export function createObserver() {
   return observe<any>({}).__ob__
 }
 
+/**
+ * 创建一个响应式代理，它跟踪其自身 property 的响应性，但不执行嵌套对象的深层响应式转换 (暴露原始值)
+ * @param obj
+ */
 export function shallowReactive<T extends object = any>(obj: T): T
 export function shallowReactive(obj: any) {
   if (!isObject(obj)) {
@@ -230,6 +243,8 @@ export function shallowReactive(obj: any) {
 
 /**
  * Make obj reactivity
+ *
+ * 返回对象的响应式副本
  */
 export function reactive<T extends object>(obj: T): UnwrapRef<T> {
   if (!isObject(obj)) {

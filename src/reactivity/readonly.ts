@@ -52,6 +52,10 @@ export function readonly<T extends object>(
   return target as any
 }
 
+/**
+ * 创建一个 proxy，使其自身的 property 为只读，但不执行嵌套对象的深度只读转换 (暴露原始值)
+ * @param obj
+ */
 export function shallowReadonly<T extends object>(obj: T): Readonly<T>
 export function shallowReadonly(obj: any): any {
   if (!isObject(obj)) {
