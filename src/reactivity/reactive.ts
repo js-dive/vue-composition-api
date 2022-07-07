@@ -168,6 +168,7 @@ function mockObserver(value: any = {}): any {
   }
 }
 
+// 仅仅是用于获得__ob__对象
 export function createObserver() {
   return observe<any>({}).__ob__
 }
@@ -252,6 +253,7 @@ export function reactive<T extends object>(obj: T): UnwrapRef<T> {
 }
 
 /**
+ * 确保对象不被响应式处理
  * Make sure obj can't be a reactive
  */
 export function markRaw<T extends object>(obj: T): T {

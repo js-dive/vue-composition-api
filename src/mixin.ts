@@ -99,7 +99,7 @@ export function mixin(Vue: VueConstructor) {
     const instance = toVue3ComponentInstance(vm)
     instance.setupContext = ctx
 
-    // 给props设置响应式？？？
+    // 给props设置响应式？
     // fake reactive for `toRefs(props)`
     def(props, '__ob__', createObserver())
 
