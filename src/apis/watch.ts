@@ -167,6 +167,16 @@ function queueFlushJob(
   }
 }
 
+/**
+ * 创建Watcher - 实际上是对vm.$watch的封装
+ * 由createWatcher在内部进行调用
+ *
+ * @param vm 当前实例
+ * @param getter 监听源 - 这里似乎传入的是一个函数
+ * @param callback 回调函数
+ * @param options 选项
+ * @returns 被设置好的watcher
+ */
 function createVueWatcher(
   vm: ComponentInstance,
   getter: () => any,
@@ -180,6 +190,7 @@ function createVueWatcher(
   }
 ): VueWatcher {
   const index = vm._watchers.length
+  // 这里会往vm._watchers中插入新设置的watcher
   // @ts-ignore: use undocumented options
   vm.$watch(getter, callback, {
     immediate: options.immediateInvokeCallback,
@@ -202,6 +213,15 @@ function patchWatcherTeardown(watcher: VueWatcher, runCleanup: () => void) {
   }
 }
 
+/**
+ * 创建watcher 由watch、watchEffect在内部进行调用
+ *
+ * @param vm 当前实例
+ * @param source 监听源
+ * @param cb 回调函数
+ * @param options 选项
+ * @returns 一个用于关闭watcher的函数
+ */
 function createWatcher(
   vm: ComponentInstance,
   source: WatchSource<unknown> | WatchSource<unknown>[] | WatchEffect,
