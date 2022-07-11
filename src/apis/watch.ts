@@ -399,6 +399,14 @@ function createWatcher(
   }
 }
 
+/**
+ * watchEffect 函数入口
+ *
+ * 立即执行传入的一个函数，同时响应式追踪其依赖，并在其依赖变更时重新运行该函数。
+ * @param effect 函数
+ * @param options 监听选项 - 对于watchEffect来说只有flush可配置
+ * @returns
+ */
 export function watchEffect(
   effect: WatchEffect,
   options?: WatchOptionsBase
@@ -416,6 +424,7 @@ export function watchSyncEffect(effect: WatchEffect) {
   return watchEffect(effect, { flush: 'sync' })
 }
 
+//#region watch 函数定义与实现
 // overload #1: array of multiple sources + cb
 // Readonly constraint helps the callback to correctly infer value types based
 // on position in the source array. Otherwise the values will get a union type
@@ -447,6 +456,14 @@ export function watch<
 ): WatchStopHandle
 
 // implementation
+/**
+ * watch 函数入口
+ *
+ * @param source 监听源
+ * @param cb 回调函数
+ * @param options 监听选项
+ * @returns
+ */
 export function watch<T = any>(
   source: WatchSource<T> | WatchSource<T>[],
   cb: WatchCallback<T>,
@@ -474,6 +491,7 @@ export function watch<T = any>(
 
   return createWatcher(vm, source, callback, opts)
 }
+//#endregion
 
 function traverse(value: unknown, seen: Set<unknown> = new Set()) {
   if (!isObject(value) || seen.has(value) || rawSet.has(value)) {
