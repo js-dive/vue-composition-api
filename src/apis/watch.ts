@@ -228,6 +228,7 @@ function createWatcher(
   cb: WatchCallback<any> | null,
   options: WatchOptions
 ): () => void {
+  // cb 未传入，但传了immediate、deep时将会报错
   if (__DEV__ && !cb) {
     if (options.immediate !== undefined) {
       warn(
@@ -243,8 +244,12 @@ function createWatcher(
     }
   }
 
+  // 冲刷模式
   const flushMode = options.flush
+  // 是否同步地进行冲刷标识
   const isSync = flushMode === 'sync'
+
+  //#region 清理函数定义、设置
   let cleanup: (() => void) | null
   const registerCleanup: InvalidateCbRegistrator = (fn: () => void) => {
     cleanup = () => {
@@ -265,6 +270,8 @@ function createWatcher(
       cleanup = null
     }
   }
+  //#endregion
+
   const createScheduler = <T extends Function>(fn: T): T => {
     if (
       isSync ||
@@ -284,6 +291,7 @@ function createWatcher(
   }
 
   // effect watch
+  // TODO: 没有cb，说明是effect watch？
   if (cb === null) {
     let running = false
     const getter = () => {
@@ -313,6 +321,7 @@ function createWatcher(
     // always run watchEffect
     watcher.get = createScheduler(originGet)
 
+    // 直接返回，不必再做其他事情了
     return () => {
       watcher.teardown()
     }
