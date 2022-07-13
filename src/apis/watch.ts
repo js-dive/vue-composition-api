@@ -91,6 +91,11 @@ function installWatchEnv(vm: any) {
   vm.$on('hook:updated', flushPostQueue)
 }
 
+/**
+ * 合并watcher选项
+ * @param options watcher的选项
+ * @returns
+ */
 function getWatcherOption(options?: Partial<WatchOptions>): WatchOptions {
   return {
     ...{
@@ -102,6 +107,11 @@ function getWatcherOption(options?: Partial<WatchOptions>): WatchOptions {
   }
 }
 
+/**
+ * 合并watch Effect的选项
+ * @param options watchEffect的选项
+ * @returns
+ */
 function getWatchEffectOption(options?: Partial<WatchOptions>): WatchOptions {
   return {
     ...{
@@ -124,6 +134,11 @@ function getWatcherVM() {
   return vm
 }
 
+/**
+ * 冲刷队列
+ * @param vm
+ * @param key
+ */
 function flushQueue(vm: any, key: any) {
   const queue = vm[key]
   for (let index = 0; index < queue.length; index++) {
@@ -132,6 +147,12 @@ function flushQueue(vm: any, key: any) {
   queue.length = 0
 }
 
+/**
+ * 将任务排到冲刷队列中
+ * @param vm
+ * @param fn 回调函数
+ * @param mode 清空模式
+ */
 function queueFlushJob(
   vm: any,
   fn: () => void,
@@ -140,9 +161,11 @@ function queueFlushJob(
   // flush all when beforeUpdate and updated are not fired
   const fallbackFlush = () => {
     vm.$nextTick(() => {
+      // beforeUpdate生命周期之前冲刷
       if (vm[WatcherPreFlushQueueKey].length) {
         flushQueue(vm, WatcherPreFlushQueueKey)
       }
+      // update生命周期之后冲刷
       if (vm[WatcherPostFlushQueueKey].length) {
         flushQueue(vm, WatcherPostFlushQueueKey)
       }
@@ -205,10 +228,22 @@ function createVueWatcher(
 
 // We have to monkeypatch the teardown function so Vue will run
 // runCleanup() when it tears down the watcher on unmounted.
+/**
+ * 将watcher中的teardown方法进行一些额外处理，使得Vue能够在卸载时运行runCleanup()
+ *
+ * monkeypatch 即运行时动态替换
+ *
+ * @param watcher Watcher
+ * @param runCleanup runCleanup
+ */
 function patchWatcherTeardown(watcher: VueWatcher, runCleanup: () => void) {
+  // 保留原有teardown方法
   const _teardown = watcher.teardown
+  // 将原有teardown方法替换为如下方法
   watcher.teardown = function (...args) {
+    // 首先执行原有方法
     _teardown.apply(watcher, args)
+    // 然后再执行runCleanup
     runCleanup()
   }
 }
@@ -264,6 +299,9 @@ function createWatcher(
     }
   }
   // cleanup before running getter again
+  /**
+   * 在getter回调执行之前，进行一次清理
+   */
   const runCleanup = () => {
     if (cleanup) {
       cleanup()
@@ -272,7 +310,9 @@ function createWatcher(
   }
   //#endregion
 
+  // 创建调度器？
   const createScheduler = <T extends Function>(fn: T): T => {
+    // 同步watcher立即执行
     if (
       isSync ||
       /* without a current active instance, ignore pre|post mode */ vm ===
@@ -280,6 +320,7 @@ function createWatcher(
     ) {
       return fn
     }
+    // 否则加入队列
     return ((...args: any[]) =>
       queueFlushJob(
         vm,
@@ -414,6 +455,7 @@ function createWatcher(
   if (isReactive(watcher.value) && watcher.value.__ob__?.dep && deep) {
     watcher.value.__ob__.dep.addSub({
       update() {
+        debugger
         // this will force the source to be revaluated and the callback
         // executed if needed
         watcher.run()
