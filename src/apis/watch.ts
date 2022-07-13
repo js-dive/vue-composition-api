@@ -91,10 +91,20 @@ function hasWatchEnv(vm: any) {
   return vm[WatcherPreFlushQueueKey] !== undefined
 }
 
+/**
+ * 初始化vm watch的环境
+ * 看起来是在vm中加入WatcherPreFlushQueueKey、WatcherPostFlushQueueKey
+ * 这两个值是数组
+ *
+ * @param vm Vue组件
+ */
 function installWatchEnv(vm: any) {
   vm[WatcherPreFlushQueueKey] = []
   vm[WatcherPostFlushQueueKey] = []
+
+  // 组件更新前冲刷前置队列
   vm.$on('hook:beforeUpdate', flushPreQueue)
+  // 组件更新后冲刷后置队列
   vm.$on('hook:updated', flushPostQueue)
 }
 
@@ -148,6 +158,11 @@ function getWatcherVM() {
   return vm
 }
 
+/**
+ * 冲刷队列
+ * @param vm
+ * @param key
+ */
 function flushQueue(vm: any, key: any) {
   const queue = vm[key]
   for (let index = 0; index < queue.length; index++) {
@@ -156,17 +171,26 @@ function flushQueue(vm: any, key: any) {
   queue.length = 0
 }
 
+/**
+ * 将任务排到冲刷队列中
+ * @param vm
+ * @param fn 回调函数
+ * @param mode 清空模式
+ */
 function queueFlushJob(
   vm: any,
   fn: () => void,
   mode: Exclude<FlushMode, 'sync'>
 ) {
+  // 在 beforeUpdate 与 updated 未触发前冲刷一次
   // flush all when beforeUpdate and updated are not fired
   const fallbackFlush = () => {
     vm.$nextTick(() => {
+      // beforeUpdate生命周期之前冲刷
       if (vm[WatcherPreFlushQueueKey].length) {
         flushQueue(vm, WatcherPreFlushQueueKey)
       }
+      // update生命周期之后冲刷
       if (vm[WatcherPostFlushQueueKey].length) {
         flushQueue(vm, WatcherPostFlushQueueKey)
       }
@@ -229,10 +253,22 @@ function createVueWatcher(
 
 // We have to monkeypatch the teardown function so Vue will run
 // runCleanup() when it tears down the watcher on unmounted.
+/**
+ * 将watcher中的teardown方法进行一些额外处理，使得Vue能够在卸载时运行runCleanup()
+ *
+ * monkeypatch 即运行时动态替换
+ *
+ * @param watcher Watcher
+ * @param runCleanup runCleanup
+ */
 function patchWatcherTeardown(watcher: VueWatcher, runCleanup: () => void) {
+  // 保留原有teardown方法
   const _teardown = watcher.teardown
+  // 将原有teardown方法替换为如下方法
   watcher.teardown = function (...args) {
+    // 首先执行原有方法
     _teardown.apply(watcher, args)
+    // 然后再执行runCleanup
     runCleanup()
   }
 }
@@ -268,13 +304,20 @@ function createWatcher(
     }
   }
 
+  // 冲刷模式
   const flushMode = options.flush
+  // 是否同步地进行冲刷标识
   const isSync = flushMode === 'sync'
+  //#region 清理函数定义、设置
   let cleanup: (() => void) | null
+  /**
+   * 设置cleanup函数
+   * @param fn
+   */
   const registerCleanup: InvalidateCbRegistrator = (fn: () => void) => {
     cleanup = () => {
       try {
-        fn()
+        fn() // TODO: 好像没有任何地方有传入fn这个参数？
       } catch (
         // FIXME: remove any
         error: any
@@ -284,20 +327,32 @@ function createWatcher(
     }
   }
   // cleanup before running getter again
+  /**
+   * 在getter回调执行之前，进行一次清理
+   */
   const runCleanup = () => {
     if (cleanup) {
       cleanup()
       cleanup = null
     }
   }
+  //#endregion
+
+  /**
+   * 创建调度器
+   *
+   * 如果watch配置中，isSync为true，或者当前没有正在激活的vm实例，那么就返回函数本身，即认为任务（？）不必进入冲刷队列，应当立即执行
+   * 否则返回一个将当前函数插入到冲刷队列中的函数，即认为任务（？）应当延后执行
+   **/
   const createScheduler = <T extends Function>(fn: T): T => {
     if (
       isSync ||
-      /* without a current active instance, ignore pre|post mode */ vm ===
-        fallbackVM
+      /* without a current active instance, ignore pre|post mode */
+      /* 没有正在激活的vm实例的情况下，忽略 pre|post 配置 */ vm === fallbackVM
     ) {
       return fn
     }
+    // 否则加入冲刷队列
     return ((...args: any[]) =>
       queueFlushJob(
         vm,
@@ -422,6 +477,9 @@ function createWatcher(
     runCleanup()
     return cb(n, o, registerCleanup)
   }
+  /**
+   * callback即最终要设置的、$watch的参数
+   */
   let callback = createScheduler(applyCb)
   // TODO: 立即调用时的逻辑
   if (options.immediate) {
@@ -464,6 +522,7 @@ function createWatcher(
     })
   }
 
+  // 将watcher中的teardown方法进行一些额外处理，使得Vue能够在卸载时运行runCleanup()
   patchWatcherTeardown(watcher, runCleanup)
 
   // 返回一个函数，用于停止监听
