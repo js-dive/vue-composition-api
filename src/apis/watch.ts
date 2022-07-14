@@ -84,10 +84,20 @@ function hasWatchEnv(vm: any) {
   return vm[WatcherPreFlushQueueKey] !== undefined
 }
 
+/**
+ * 初始化vm watch的环境
+ * 看起来是在vm中加入WatcherPreFlushQueueKey、WatcherPostFlushQueueKey
+ * 这两个值是数组
+ *
+ * @param vm Vue组件
+ */
 function installWatchEnv(vm: any) {
   vm[WatcherPreFlushQueueKey] = []
   vm[WatcherPostFlushQueueKey] = []
+
+  // 组件更新前冲刷前置队列
   vm.$on('hook:beforeUpdate', flushPreQueue)
+  // 组件更新后冲刷后置队列
   vm.$on('hook:updated', flushPostQueue)
 }
 
@@ -136,8 +146,8 @@ function getWatcherVM() {
 
 /**
  * 冲刷队列
- * @param vm
- * @param key
+ * @param vm Vue组件
+ * @param key 队列的key
  */
 function flushQueue(vm: any, key: any) {
   const queue = vm[key]
@@ -158,6 +168,7 @@ function queueFlushJob(
   fn: () => void,
   mode: Exclude<FlushMode, 'sync'>
 ) {
+  // 在 beforeUpdate 与 updated 未触发前冲刷一次
   // flush all when beforeUpdate and updated are not fired
   const fallbackFlush = () => {
     vm.$nextTick(() => {
