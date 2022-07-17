@@ -70,6 +70,8 @@ export interface VueWatcher {
 
 export type WatchStopHandle = () => void
 
+// 用于回落的vm
+// getWatcherVM、createScheduler会使用
 let fallbackVM: ComponentInstance
 
 function flushPreQueue(this: any) {
@@ -80,6 +82,11 @@ function flushPostQueue(this: any) {
   flushQueue(this, WatcherPostFlushQueueKey)
 }
 
+/**
+ * 检查vm中是否存在composotion-api queue专用的属性
+ * @param vm
+ * @returns
+ */
 function hasWatchEnv(vm: any) {
   return vm[WatcherPreFlushQueueKey] !== undefined
 }
@@ -91,6 +98,11 @@ function installWatchEnv(vm: any) {
   vm.$on('hook:updated', flushPostQueue)
 }
 
+/**
+ * 合并watcher选项
+ * @param options watcher的选项
+ * @returns
+ */
 function getWatcherOption(options?: Partial<WatchOptions>): WatchOptions {
   return {
     ...{
@@ -102,6 +114,11 @@ function getWatcherOption(options?: Partial<WatchOptions>): WatchOptions {
   }
 }
 
+/**
+ * 合并watch Effect的选项
+ * @param options watchEffect的选项
+ * @returns
+ */
 function getWatchEffectOption(options?: Partial<WatchOptions>): WatchOptions {
   return {
     ...{
@@ -111,14 +128,21 @@ function getWatchEffectOption(options?: Partial<WatchOptions>): WatchOptions {
   }
 }
 
+/**
+ * 获得当前正在激活的Vue实例
+ * @returns
+ */
 function getWatcherVM() {
   let vm = getCurrentScopeVM()
+  // 如果当前vm不存在，就生成一个新的vm
   if (!vm) {
     if (!fallbackVM) {
       fallbackVM = defineComponentInstance(getVueConstructor())
     }
     vm = fallbackVM
-  } else if (!hasWatchEnv(vm)) {
+  }
+  // 如果vm中不存在composition-api queue专用的属性，就安装一下
+  else if (!hasWatchEnv(vm)) {
     installWatchEnv(vm)
   }
   return vm
@@ -228,6 +252,7 @@ function createWatcher(
   cb: WatchCallback<any> | null,
   options: WatchOptions
 ): () => void {
+  // cb 未传入，但传了immediate、deep时将会报错
   if (__DEV__ && !cb) {
     if (options.immediate !== undefined) {
       warn(
@@ -284,6 +309,7 @@ function createWatcher(
   }
 
   // effect watch
+  // TODO: 没有cb，说明是effect watch？
   if (cb === null) {
     let running = false
     const getter = () => {
@@ -313,6 +339,7 @@ function createWatcher(
     // always run watchEffect
     watcher.get = createScheduler(originGet)
 
+    // 直接返回，不必再做其他事情了
     return () => {
       watcher.teardown()
     }
@@ -322,14 +349,20 @@ function createWatcher(
   let isMultiSource = false
 
   let getter: () => any
+  // 如果是ref则返回其中的value
   if (isRef(source)) {
     getter = () => source.value
-  } else if (isReactive(source)) {
+  }
+  // 如果经过reactive处理，就返回这个值
+  else if (isReactive(source)) {
     getter = () => source
-    deep = true
-  } else if (isArray(source)) {
+    deep = true // TODO: 为什么要把deep设为true？或许，因为source是个对象，因此deep应该设置为true；或许应该只观测其中对象第一层的变化？
+  }
+  // 如果是个数组，那就说明是有多个监听源
+  else if (isArray(source)) {
     isMultiSource = true
     getter = () =>
+      // 因此对这些监听源再各自处理一次
       source.map((s) => {
         if (isRef(s)) {
           return s.value
@@ -347,9 +380,13 @@ function createWatcher(
           return noopFn
         }
       })
-  } else if (isFunction(source)) {
+  }
+  // 如果是个函数
+  else if (isFunction(source)) {
     getter = source as () => any
-  } else {
+  }
+  // 其它神经的情况 - watch源无效
+  else {
     getter = noopFn
     __DEV__ &&
       warn(
@@ -359,14 +396,24 @@ function createWatcher(
       )
   }
 
+  // TODO: 如果deep为true的话，就遍历一下整个对象，重新设置getter？
   if (deep) {
     const baseGetter = getter
     getter = () => traverse(baseGetter())
   }
 
+  /**
+   * 我们所传入的watcher回调由此函数调用
+   *
+   * @param n 旧值
+   * @param o 新值
+   * @returns 我们所传入的callback的返回值
+   */
   const applyCb = (n: any, o: any) => {
     if (
+      // TODO: 不是deep就不用调用了？
       !deep &&
+      // 如果监听源是个数组且每一项都相同，也不必调用了
       isMultiSource &&
       n.every((v: any, i: number) => isSame(v, o[i]))
     )
@@ -376,8 +423,12 @@ function createWatcher(
     return cb(n, o, registerCleanup)
   }
   let callback = createScheduler(applyCb)
+  // TODO: 立即调用时的逻辑
   if (options.immediate) {
+    // 存一下原始的callback
     const originalCallback = callback
+    // shiftCallback用来处理第一次同步的副作用执行
+    // 在第一次执行过后，shiftCallback的值将变为原来的callback，此时即可恢复主线的watcher回调函数
     // `shiftCallback` is used to handle the first sync effect run.
     // The subsequent callbacks will redirect to `callback`.
     let shiftCallback = (n: any, o: any) => {
@@ -390,6 +441,7 @@ function createWatcher(
     }
   }
 
+  // 停止监听
   // @ts-ignore: use undocumented option "sync"
   const stop = vm.$watch(getter, callback, {
     immediate: options.immediate,
@@ -414,6 +466,7 @@ function createWatcher(
 
   patchWatcherTeardown(watcher, runCleanup)
 
+  // 返回一个函数，用于停止监听
   return () => {
     stop()
   }
@@ -509,6 +562,7 @@ export function watch<T = any>(
   const opts = getWatcherOption(options)
   const vm = getWatcherVM()
 
+  // 真正的创建watcher的逻辑
   return createWatcher(vm, source, callback, opts)
 }
 //#endregion
