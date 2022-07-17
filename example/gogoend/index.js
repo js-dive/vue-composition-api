@@ -21,22 +21,21 @@ const App = defineComponent({
       msg,
       (...args) => {
         debugger
-        console.log(...args)
+        console.log('w1', ...args)
       },
-      {
-        immediate: true,
-      }
+      {}
     )
     watch(
       msg,
       (...args) => {
         debugger
-        console.log(...args)
+        console.log('w2', ...args)
       },
       {
         immediate: true,
       }
     )
+    msg.value = '777'
 
     onMounted(() => {
       console.log(1)
