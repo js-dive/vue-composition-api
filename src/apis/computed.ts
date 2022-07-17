@@ -27,10 +27,12 @@ export function computed<T>(
 export function computed<T>(
   getterOrOptions: ComputedGetter<T> | WritableComputedOptions<T>
 ): ComputedRef<T> | WritableComputedRef<T> {
+  // 获得当前激活的（在作用域内的vm）
   const vm = getCurrentScopeVM()
   let getter: ComputedGetter<T>
   let setter: ComputedSetter<T> | undefined
 
+  // 归一化getterOrOptions，将它们分别赋值给getter、setter
   if (isFunction(getterOrOptions)) {
     getter = getterOrOptions
   } else {
@@ -41,19 +43,25 @@ export function computed<T>(
   let computedSetter
   let computedGetter
 
+  // 如果能拿到vm，并且在非服务器渲染环境下
   if (vm && !vm.$isServer) {
+    // 获得Vue内部的Watcher及Dep类
     const { Watcher, Dep } = getVueInternalClasses()
     let watcher: any
     computedGetter = () => {
       if (!watcher) {
+        // 设置计算属性Watcher —— 逻辑与传统的Vue 2主项目一致
         watcher = new Watcher(vm, getter, noopFn, { lazy: true })
       }
+      // 如果watcher dirty了，就重新进行一次计算来获取新的值
       if (watcher.dirty) {
         watcher.evaluate()
       }
+      // TODO: 如果存在全剧唯一正在被计算的watcher，那么就进行以来收集
       if (Dep.target) {
         watcher.depend()
       }
+      // 返回计算属性watcher的值
       return watcher.value
     }
 
@@ -67,7 +75,9 @@ export function computed<T>(
         setter(v)
       }
     }
-  } else {
+  }
+  // 否则，创建一个新的vue实例，来托管computed
+  else {
     // fallback
     const computedHost = defineComponentInstance(getVueConstructor(), {
       computed: {
@@ -91,6 +101,7 @@ export function computed<T>(
     }
   }
 
+  // 返回一个用于获得computed值的ref
   return createRef<T>(
     {
       get: computedGetter,

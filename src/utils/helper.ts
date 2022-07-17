@@ -23,6 +23,12 @@ export function getCurrentInstanceForFn(
   return target
 }
 
+/**
+ * 生成一个组件实例
+ * @param Ctor 构造函数
+ * @param options 组件选项
+ * @returns
+ */
 export function defineComponentInstance<V extends Vue = Vue>(
   Ctor: VueConstructor<V>,
   options: ComponentOptions<V> = {}
@@ -90,6 +96,10 @@ let vueInternalClasses:
     }
   | undefined
 
+/**
+ * 通过新构造一个Vue实例的方式，获得Vue中内部的两个类 —— Watcher、Dep，然后把它们缓存起来
+ * @returns
+ */
 export const getVueInternalClasses = () => {
   if (!vueInternalClasses) {
     const vm: any = defineComponentInstance(getVueConstructor(), {
