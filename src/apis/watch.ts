@@ -93,18 +93,19 @@ function hasWatchEnv(vm: any) {
 
 /**
  * 初始化vm watch的环境
- * 看起来是在vm中加入WatcherPreFlushQueueKey、WatcherPostFlushQueueKey
- * 这两个值是数组
+ * 看起来做了下面两件事：
+ * 1. 在vm中加入WatcherPreFlushQueueKey、WatcherPostFlushQueueKey —— 它们对应的值是数组
+ * 2. 设置在beforeUpdate、updated生命周期将要做的事情，即分别冲刷对应队列
  *
  * @param vm Vue组件
  */
 function installWatchEnv(vm: any) {
+  // 加入WatcherPreFlushQueueKey、WatcherPostFlushQueueKey属性，并设置值为数组的逻辑
   vm[WatcherPreFlushQueueKey] = []
   vm[WatcherPostFlushQueueKey] = []
 
-  // 组件更新前冲刷前置队列
+  // 设置组件beforeUpdate、updated生命周期执行前后，冲刷一次队列的逻辑
   vm.$on('hook:beforeUpdate', flushPreQueue)
-  // 组件更新后冲刷后置队列
   vm.$on('hook:updated', flushPostQueue)
 }
 
@@ -159,7 +160,7 @@ function getWatcherVM() {
 }
 
 /**
- * 冲刷队列
+ * 冲刷队列，冲刷结束后将队列长度设置为0
  * @param vm
  * @param key
  */
@@ -168,11 +169,12 @@ function flushQueue(vm: any, key: any) {
   for (let index = 0; index < queue.length; index++) {
     queue[index]()
   }
+  // 队列冲刷完了以后，将队列长度设置为0
   queue.length = 0
 }
 
 /**
- * 将任务排到冲刷队列中
+ * 将任务排到冲刷队列中，并在nextTick后冲刷掉所有任务
  * @param vm
  * @param fn 回调函数
  * @param mode 清空模式
@@ -182,9 +184,15 @@ function queueFlushJob(
   fn: () => void,
   mode: Exclude<FlushMode, 'sync'>
 ) {
-  // 在 beforeUpdate 与 updated 未触发前冲刷一次
   // flush all when beforeUpdate and updated are not fired
+  /**
+   * 即使 beforeUpdate 与 updated 未触发，也冲刷一次队列
+   *
+   * TODO: 正常情况下，队列应该是 beforeUpdate 与 updated 执行时会冲刷一次的
+   * 目前来看即使没有走这两个生命周期，也会冲刷一次队列
+   */
   const fallbackFlush = () => {
+    // 真正的冲刷逻辑是在nextTick后才执行的，在此之前可以往队列里排任务
     vm.$nextTick(() => {
       // beforeUpdate生命周期之前冲刷
       if (vm[WatcherPreFlushQueueKey].length) {
@@ -197,14 +205,19 @@ function queueFlushJob(
     })
   }
 
+  /**
+   * 预先确定好在nextTick时冲刷一次队列，并在此之前排任务的逻辑
+   *
+   * TODO: 真正冲刷的时候似乎就不管flush值是post还是pre了，只按照排序顺序执行
+   */
   switch (mode) {
     case 'pre':
-      fallbackFlush()
-      vm[WatcherPreFlushQueueKey].push(fn)
+      fallbackFlush() // 预定好在nextTick时冲刷一次队列
+      vm[WatcherPreFlushQueueKey].push(fn) // 在真正的冲刷逻辑执行此之前，我们可以把任务先排上
       break
     case 'post':
-      fallbackFlush()
-      vm[WatcherPostFlushQueueKey].push(fn)
+      fallbackFlush() // 预定好在nextTick时冲刷一次队列
+      vm[WatcherPostFlushQueueKey].push(fn) // 在真正的冲刷逻辑执行此之前，我们可以把任务先排上
       break
     default:
       assert(
