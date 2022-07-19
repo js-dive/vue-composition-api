@@ -7,6 +7,9 @@ import {
 import { defineComponentInstance } from '../utils'
 import { warn } from './warn'
 
+/**
+ * 正在活动（全局唯一）的effectScope
+ */
 let activeEffectScope: EffectScope | undefined
 const effectScopeStack: EffectScope[] = []
 
@@ -75,12 +78,20 @@ export class EffectScope extends EffectScopeImpl {
   }
 }
 
+/**
+ * 记录effectScope？
+ * @param effect
+ * @param scope
+ * @returns
+ */
 export function recordEffectScope(
   effect: EffectScope,
   scope?: EffectScope | null
 ) {
   scope = scope || activeEffectScope
   if (scope && scope.active) {
+    // 如果不是游离的Effect，那么就往当前scope effects里push一下传入的effect
+    // 看起来有点像一棵树
     scope.effects.push(effect)
     return
   }
@@ -109,6 +120,7 @@ export function onScopeDispose(fn: () => void) {
 }
 
 /**
+ * 获得当前在scope内的vm？TODO: 为何有两种写法？
  * @internal
  **/
 export function getCurrentScopeVM() {
