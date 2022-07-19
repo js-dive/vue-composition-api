@@ -11,6 +11,9 @@ import {
 } from './utils'
 import type Vue$1 from 'vue'
 
+/**
+ * vue 依赖（Vue）
+ */
 let vueDependency: VueConstructor | undefined = undefined
 
 try {
@@ -29,24 +32,43 @@ try {
 }
 
 let vueConstructor: VueConstructor | null = null
+
+/**
+ * 当前Vue3实例
+ */
 let currentInstance: ComponentInternalInstance | null = null
 let currentInstanceTracking = true
 
+/**
+ * 插件已安装标识
+ */
 const PluginInstalledFlag = '__composition_api_installed__'
 
 function isVue(obj: any): obj is VueConstructor {
   return obj && isFunction(obj) && obj.name === 'Vue'
 }
 
+/**
+ * 检查插件是否已安装 - TODO: 通过判断vueConstructor是否存在？
+ * @returns 插件是否已安装
+ */
 export function isPluginInstalled() {
   return !!vueConstructor
 }
 
+/**
+ * 检查插件是否已注册 - 通过判断vueConstructor是否存在 且 传入的Vue构造函数中是否具有PluginInstalledFlag
+ * @returns 插件是否已注册
+ */
 export function isVueRegistered(Vue: VueConstructor) {
   // resolve issue: https://github.com/vuejs/composition-api/issues/876#issue-1087619365
   return vueConstructor && hasOwn(Vue, PluginInstalledFlag)
 }
 
+/**
+ * 获得Vue构造函数
+ * @returns Vue构造函数
+ */
 export function getVueConstructor(): VueConstructor {
   if (__DEV__) {
     assert(
@@ -69,6 +91,10 @@ export function getRegisteredVueOrDefault(): VueConstructor {
   return constructor!
 }
 
+/**
+ * 在Vue类上记录一个表示插件已安装的标志位
+ * @param Vue
+ */
 export function setVueConstructor(Vue: VueConstructor) {
   // @ts-ignore
   if (__DEV__ && vueConstructor && Vue.__proto__ !== vueConstructor.__proto__) {
@@ -96,6 +122,11 @@ export function withCurrentInstanceTrackingDisabled(fn: () => void) {
   }
 }
 
+/**
+ * 设置当前Vue2实例 - 内部调用toVue3ComponentInstance转换
+ * @param vm
+ * @returns
+ */
 export function setCurrentVue2Instance(vm: ComponentInstance | null) {
   if (!currentInstanceTracking) return
   setCurrentInstance(vm ? toVue3ComponentInstance(vm) : vm)
@@ -106,8 +137,10 @@ export function setCurrentVue2Instance(vm: ComponentInstance | null) {
  */
 export function setCurrentInstance(instance: ComponentInternalInstance | null) {
   if (!currentInstanceTracking) return
+  // 关闭上一个实例的scope
   const prev = currentInstance
   prev?.scope.off()
+  // 开启当前实例的scope
   currentInstance = instance
   currentInstance?.scope.on()
 }
