@@ -181,6 +181,8 @@ export interface SetupContext<E extends EmitsOptions = {}> {
 export interface ComponentPublicInstance {}
 
 /**
+ * 我们暴露了在内部实例上的一部分属性，因为它们对于高级的库与工具来说会较为有用。
+ *
  * We expose a subset of properties on the internal instance as they are
  * useful for advanced external libraries and tools.
  */
@@ -215,6 +217,9 @@ export declare interface ComponentInternalInstance {
   slots: InternalSlots
   emitted: Record<string, boolean> | null
 
+  /**
+   * Vue2 组件实例
+   */
   proxy: ComponentInstance
 
   isMounted: boolean
@@ -272,6 +277,8 @@ export function toVue3ComponentInstance(
     root: null!, // to be immediately set
   } as unknown as ComponentInternalInstance
 
+  // 将当前作用域绑定到vue3实例上
+  // EffectScope入口
   bindCurrentScopeToVM(instance)
 
   // map vm.$props =

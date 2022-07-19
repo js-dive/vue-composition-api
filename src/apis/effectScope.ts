@@ -116,14 +116,18 @@ export function getCurrentScopeVM() {
 }
 
 /**
+ * 绑定当前scope到vm上？
  * @internal
  **/
 export function bindCurrentScopeToVM(
   vm: ComponentInternalInstance
 ): EffectScope {
+  // 如果vm上没有scope，就设置一下
   if (!vm.scope) {
     const scope = new EffectScopeImpl(vm.proxy) as EffectScope
     vm.scope = scope
+
+    // vm销毁的时候，scope给停掉
     vm.proxy.$on('hook:destroyed', () => scope.stop())
   }
   return vm.scope
