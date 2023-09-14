@@ -8,6 +8,7 @@ import VueCompositionAPI, {
   effectScope,
   watchEffect,
   computed,
+  provide,
 } from '@vue/composition-api'
 
 Vue.use(VueCompositionAPI)
@@ -36,6 +37,7 @@ const App = defineComponent({
   setup() {
     const msg = ref('666')
     console.log(msg)
+    provide(msg)
 
     watch(
       msg,
@@ -58,9 +60,11 @@ const App = defineComponent({
     msg.value = '777'
 
     onMounted(() => {
+      debugger
       console.log(1)
     })
     onMounted(() => {
+      debugger
       console.log(2)
     })
     return {
